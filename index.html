@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Candidate Testing Platform</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            user-select: none;
+            text-align: center;
+            overflow: hidden; /* Prevent scrolling on the body */
+        }
+        #name-input {
+            margin: 20px;
+        }
+        #question-box {
+            width: 80%;
+            margin: 20px auto;
+            padding: 20px;
+            border: 1px solid #ccc;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+        }
+        #timer {
+            font-size: 24px;
+            font-weight: bold;
+            color: #ff0000;
+        }
+        #results {
+            margin-top: 20px;
+            max-height: 400px; /* Set a max height for results */
+            overflow-y: auto; /* Allow vertical scrolling */
+            border: 1px solid #ccc;
+            padding: 10px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+            background-color: #fff;
+        }
+        .hidden {
+            display: none;
+        }
+        .correct-icon {
+            color: green;
+            font-weight: bold;
+            font-size: 18px;
+        }
+        .incorrect-icon {
+            color: red;
+            font-weight: bold;
+            font-size: 18px;
+        }
+        .option {
+            display: block;
+            margin: 10px 0;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>Candidate Test</h1>
+    <div id="name-input">
+        <input type="text" id="name" placeholder="Enter your name" required>
+        <button onclick="startTest()">Start Test</button>
+    </div>
+    <div id="timer" class="hidden">Time Left: 35:00</div>
+    <div id="question-box" class="hidden">
+        <h2 id="question-title">Question 1:</h2>
+        <p id="question-text">What is the capital of France?</p>
+        <div id="options"></div>
+        <button onclick="submitAnswer()">Submit Answer</button>
+    </div>
+    <div id="results" class="hidden"></div>
+
+    <script>
+        // Disable right-click
+        document.addEventListener("contextmenu", function(e) {
+            e.preventDefault();
+            alert("Right-click is disabled to prevent copying!");
+        });
+
+        // Disable Copying
+        document.addEventListener("copy", function(e) {
+            e.preventDefault();
+            alert("Copying content is not allowed!");
+        });
+
+        // Prevent screenshots using keyboard shortcuts
+        document.addEventListener('keydown', function(event) {
+            if (event.key === "PrintScreen" || 
+                (event.ctrlKey && (event.key === "P" || event.key === "C" || event.key === "A"))) {
+                alert("Screenshots are not allowed during the test.");
+                event.preventDefault();
+            }
+        });
+
+        // Disable certain keys
+        document.addEventListener('keydown', function(event) {
+            if (event.key === "F12" || event.key === "I" || (event.ctrlKey && event.key === "Shift" && event.key === "I")) {
+                alert("Developer tools are disabled!");
+                event.preventDefault();
+            }
+        });
+
+        // Timer function
+        let timeLeft = 2100; // 35 minutes in seconds
+        let userName = '';
+        function startTimer() {
+            const timerDisplay = document.getElementById("timer");
+            timerDisplay.classList.remove("hidden");
+            const interval = setInterval(() => {
+                let minutes = Math.floor(timeLeft / 60);
+                let seconds = timeLeft % 60;
+                timerDisplay.textContent = `Time Left: ${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+                timeLeft--;
+                if (timeLeft < 0) {
+                    clearInterval(interval);
+                    timerDisplay.textContent = "Time's up!";
+                    showResults();
+                }
+            }, 1000);
+        }
+
+        // Start test
+        function startTest() {
+            userName = document.getElementById("name").value;
+            if (!userName) {
+                alert("Please enter your name to start the test.");
+                return;
+            }
+            document.getElementById("name-input").classList.add("hidden");
+            document.getElementById("question-box").classList.remove("hidden");
+            startTimer();
+            displayQuestion();
+        }
+
+        // Question and Answer Data with Options
+        const questions = [
+            {
+                question: "What is SQL Injection?",
+                answer: "A code injection technique used to attack data-driven applications.",
+                options: [
+                    "A data storage technique",
+                    "A type of database",
+                    "A code injection technique used to attack data-driven applications.",
+                    "A network protocol"
+                ]
+            },
+            {
+                question: "Name one commonly used hashing algorithm in cybersecurity.",
+                answer: "SHA-256",
+                options: [
+                    "SSL",
+                    "MD5",
+                    "SHA-256",
+                    "RSA"
+                ]
+            },
+            {
+                question: "What does HTML stand for?",
+                answer: "HyperText Markup Language",
+                options: [
+                    "Hypertext Markup Language",
+                    "HighText Machine Language",
+                    "Hyperlink and Text Markup Language",
+                    "Hypertextual Markup Language"
+                ]
+            },
+            {
+                question: "What is the purpose of CSS?",
+                answer: "To style web pages",
+                options: [
+                    "To create server-side scripts",
+                    "To style web pages",
+                    "To manage databases",
+                    "To build web applications"
+                ]
+            },
+            {
+                question: "What is Node.js?",
+                answer: "A runtime environment for executing JavaScript on the server side.",
+                options: [
+                    "A JavaScript library",
+                    "A runtime environment for executing JavaScript on the server side.",
+                    "A framework for building mobile apps",
+                    "A type of database"
+                ]
+            },
+            {
+                question: "Which language is primarily used for web development?",
+                answer: "JavaScript",
+                options: [
+                    "Java",
+                    "Python",
+                    "JavaScript",
+                    "C++"
+                ]
+            },
+            {
+                question: "What is OpenCV used for?",
+                answer: "Computer vision tasks",
+                options: [
+                    "Data analysis",
+                    "Web development",
+                    "Computer vision tasks",
+                    "Machine learning"
+                ]
+            },
+            {
+                question: "What does API stand for?",
+                answer: "Application Programming Interface",
+                options: [
+                    "Application Programming Interface",
+                    "Advanced Programming Interface",
+                    "Application Program Interface",
+                    "Automatic Programming Interface"
+                ]
+            },
+            {
+                question: "What is the primary purpose of firewalls?",
+                answer: "To prevent unauthorized access",
+                options: [
+                    "To enhance performance",
+                    "To prevent unauthorized access",
+                    "To monitor traffic",
+                    "To provide encryption"
+                ]
+            },
+            {
+                question: "What is the process of data normalization?",
+                answer: "Organizing data to reduce redundancy",
+                options: [
+                    "Increasing data redundancy",
+                    "Storing data in multiple formats",
+                    "Organizing data to reduce redundancy",
+                    "Encrypting data"
+                ]
+            },
+            {
+                question: "What is a neural network?",
+                answer: "A set of algorithms modeled after the human brain",
+                options: [
+                    "A type of database",
+                    "A set of algorithms modeled after the human brain",
+                    "A programming language",
+                    "A software application"
+                ]
+            },
+            {
+                question: "What does CRUD stand for?",
+                answer: "Create, Read, Update, Delete",
+                options: [
+                    "Create, Read, Upload, Delete",
+                    "Create, Read, Update, Delete",
+                    "Create, Remove, Update, Delete",
+                    "Create, Read, Use, Delete"
+                ]
+            },
+            {
+                question: "What is the purpose of a version control system?",
+                answer: "To manage changes to source code",
+                options: [
+                    "To build applications",
+                    "To manage changes to source code",
+                    "To monitor user access",
+                    "To optimize performance"
+                ]
+            },
+            {
+                question: "What is XSS?",
+                answer: "Cross-Site Scripting",
+                options: [
+                    "Cross-Site Scripting",
+                    "Cross-Site Server",
+                    "Cross-Site Security",
+                    "Cross-Site Sharing"
+                ]
+            },
+            {
+                question: "What is the function of SSL?",
+                answer: "To secure communications over a computer network",
+                options: [
+                    "To speed up data transfer",
+                    "To secure communications over a computer network",
+                    "To enhance graphics rendering",
+                    "To manage user sessions"
+                ]
+            },
+            {
+                question: "Which of the following is a machine learning library?",
+                answer: "TensorFlow",
+                options: [
+                    "TensorFlow",
+                    "React",
+                    "Django",
+                    "Flask"
+                ]
+            },
+            {
+                question: "What is the main purpose of a load balancer?",
+                answer: "To distribute network or application traffic across multiple servers",
+                options: [
+                    "To store data",
+                    "To distribute network or application traffic across multiple servers",
+                    "To provide security",
+                    "To backup data"
+                ]
+            },
+            {
+                question: "What is a denial-of-service attack?",
+                answer: "An attempt to make a machine or network resource unavailable",
+                options: [
+                    "An attempt to access private data",
+                    "An attempt to make a machine or network resource unavailable",
+                    "An attempt to encrypt files",
+                    "An attempt to steal data"
+                ]
+            },
+            {
+                question: "What does the term 'cloud computing' mean?",
+                answer: "Using remote servers hosted on the internet to store, manage, and process data",
+                options: [
+                    "Storing data on local servers",
+                    "Using remote servers hosted on the internet to store, manage, and process data",
+                    "Storing data on personal computers",
+                    "Using hard drives to store data"
+                ]
+            },
+            {
+                question: "What is responsive web design?",
+                answer: "Design that adapts to different screen sizes",
+                options: [
+                    "Design that requires Flash",
+                    "Design for mobile devices only",
+                    "Design that adapts to different screen sizes",
+                    "Design that is fixed in size"
+                ]
+            },
+            {
+                question: "What is a data breach?",
+                answer: "The unauthorized access of sensitive data",
+                options: [
+                    "A type of virus",
+                    "The unauthorized access of sensitive data",
+                    "A security tool",
+                    "A data storage method"
+                ]
+            },
+            {
+                question: "What does the acronym 'DDoS' stand for?",
+                answer: "Distributed Denial of Service",
+                options: [
+                    "Direct Denial of Service",
+                    "Distributed Denial of Service",
+                    "Dynamic Denial of Service",
+                    "Denial of Service"
+                ]
+            },
+            {
+                question: "Which of the following is a version control system?",
+                answer: "Git",
+                options: [
+                    "GitHub",
+                    "Git",
+                    "Bitbucket",
+                    "SourceForge"
+                ]
+            },
+            {
+                question: "What is the purpose of Docker?",
+                answer: "To automate the deployment of applications inside containers",
+                options: [
+                    "To manage databases",
+                    "To build web applications",
+                    "To automate the deployment of applications inside containers",
+                    "To monitor server performance"
+                ]
+            },
+            {
+                question: "What is machine learning?",
+                answer: "A subset of AI that enables systems to learn from data",
+                options: [
+                    "A type of programming language",
+                    "A subset of AI that enables systems to learn from data",
+                    "A database technology",
+                    "A type of networking"
+                ]
+            },
+            {
+                question: "What does 'phishing' refer to?",
+                answer: "A method of trying to gather personal information",
+                options: [
+                    "A type of fishing",
+                    "A method of trying to gather personal information",
+                    "A cybersecurity framework",
+                    "A web development technique"
+                ]
+            },
+            {
+                question: "What is a CI/CD pipeline?",
+                answer: "A set of practices for automating software development processes",
+                options: [
+                    "A type of database management",
+                    "A set of practices for automating software development processes",
+                    "A programming language",
+                    "A cloud computing service"
+                ]
+            },
+            {
+                question: "What is an SSL certificate?",
+                answer: "A digital certificate that provides authentication for a website",
+                options: [
+                    "A type of database",
+                    "A digital certificate that provides authentication for a website",
+                    "A security tool for applications",
+                    "A type of programming language"
+                ]
+            },
+            {
+                question: "What does 'data mining' involve?",
+                answer: "Extracting useful information from large data sets",
+                options: [
+                    "Storing data securely",
+                    "Extracting useful information from large data sets",
+                    "Creating databases",
+                    "Visualizing data"
+                ]
+            },
+            {
+                question: "What is a web server?",
+                answer: "A server that stores and serves web pages",
+                options: [
+                    "A type of application",
+                    "A server that stores and serves web pages",
+                    "A programming language",
+                    "A database system"
+                ]
+            },
+            {
+                question: "What is the primary function of a database?",
+                answer: "To store data",
+                options: [
+                    "To process data",
+                    "To visualize data",
+                    "To store data",
+                    "To encrypt data"
+                ]
+            },
+            {
+                question: "What is the purpose of an HTTP request?",
+                answer: "To communicate with web servers",
+                options: [
+                    "To send emails",
+                    "To communicate with web servers",
+                    "To manage databases",
+                    "To store files"
+                ]
+            },
+            {
+                question: "What is a prototype in web development?",
+                answer: "An early sample or model of a product",
+                options: [
+                    "A final product",
+                    "An early sample or model of a product",
+                    "A programming language",
+                    "A database management system"
+                ]
+            },
+            {
+                question: "What is a CDN?",
+                answer: "A Content Delivery Network",
+                options: [
+                    "A type of database",
+                    "A Content Delivery Network",
+                    "A programming library",
+                    "A web development tool"
+                ]
+            },
+            {
+                question: "What does 'encryption' refer to?",
+                answer: "The process of encoding data for security",
+                options: [
+                    "The process of storing data",
+                    "The process of encoding data for security",
+                    "The process of deleting data",
+                    "The process of copying data"
+                ]
+            },
+            {
+                question: "What is a vulnerability in cybersecurity?",
+                answer: "A weakness in a system that can be exploited",
+                options: [
+                    "A type of encryption",
+                    "A weakness in a system that can be exploited",
+                    "A security tool",
+                    "A type of network"
+                ]
+            },
+            {
+                question: "What is responsive web design?",
+                answer: "Design that makes web pages render well on various devices",
+                options: [
+                    "Design that is only for mobile devices",
+                    "Design that makes web pages render well on various devices",
+                    "Design that is fixed in size",
+                    "Design that requires JavaScript only"
+                ]
+            }
+        ];
+
+        let currentQuestionIndex = 0;
+        const userAnswers = [];
+
+        // Display Question
+        function displayQuestion() {
+            const questionTitle = document.getElementById("question-title");
+            const questionText = document.getElementById("question-text");
+            const optionsDiv = document.getElementById("options");
+
+            const currentQuestion = questions[currentQuestionIndex];
+            questionTitle.textContent = `Question ${currentQuestionIndex + 1}:`;
+            questionText.textContent = currentQuestion.question;
+
+            // Clear previous options
+            optionsDiv.innerHTML = '';
+
+            // Display new options
+            currentQuestion.options.forEach((option, index) => {
+                const optionElement = document.createElement("div");
+                optionElement.classList.add("option");
+                optionElement.innerHTML = `
+                    <input type="radio" name="answer" value="${option}" id="option${index}">
+                    <label for="option${index}">${option}</label>
+                `;
+                optionsDiv.appendChild(optionElement);
+            });
+        }
+
+        // Submit Answer
+        function submitAnswer() {
+            const selectedOption = document.querySelector('input[name="answer"]:checked');
+            if (!selectedOption) {
+                alert("Please select an answer.");
+                return;
+            }
+
+            const userAnswer = selectedOption.value;
+            userAnswers.push(userAnswer);
+
+            currentQuestionIndex++;
+            if (currentQuestionIndex < questions.length) {
+                displayQuestion();
+            } else {
+                showResults();
+            }
+        }
+
+        // Show Results with Icons and Name
+        function showResults() {
+            document.getElementById("question-box").classList.add("hidden");
+            const resultsDiv = document.getElementById("results");
+            resultsDiv.classList.remove("hidden");
+
+            let correctCount = 0;
+            let resultHTML = `<h2>Results for ${userName}</h2><p>Your Score: ${correctCount} / ${questions.length}</p><ul>`;
+            questions.forEach((q, index) => {
+                const isCorrect = userAnswers[index] === q.answer;
+                if (isCorrect) correctCount++;
+                const icon = isCorrect 
+                    ? `<span class="correct-icon">✓</span>` 
+                    : `<span class="incorrect-icon">✗</span>`;
+                resultHTML += `<li>${q.question} - Your Answer: ${userAnswers[index] || "No Answer"} ${icon}</li>`;
+            });
+            resultHTML += `</ul><p>Your Final Score: ${correctCount} / ${questions.length}</p>`;
+            resultsDiv.innerHTML = resultHTML;
+        }
+
+        // Load first question
+        displayQuestion();
+    </script>
+</body>
+</html>
